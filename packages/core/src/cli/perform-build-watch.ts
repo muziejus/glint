@@ -23,8 +23,6 @@ export function performBuildWatch(
   );
 
   patchBuildWatchCompilerHost(host, transformManager);
-
-  ts.createSolutionBuilderWithWatch(host, rootNames);
 }
 
 type Program = ts.EmitAndSemanticDiagnosticsBuilderProgram;
@@ -38,7 +36,7 @@ function patchBuildWatchCompilerHost(host: WatchHost, transformManager: Transfor
   };
 }
 
-function patchProgram(program: Program, transformManager: TransformManager) {
+function patchProgram(program: Program, transformManager: TransformManager): void {
   let { getSyntacticDiagnostics, getSemanticDiagnostics } = program;
 
   program.getSyntacticDiagnostics = (sourceFile, cancellationToken) => {
@@ -49,7 +47,7 @@ function patchProgram(program: Program, transformManager: TransformManager) {
 
   program.getSemanticDiagnostics = (sourceFile, cancellationToken) => {
     let diagnostics = getSemanticDiagnostics.call(program, sourceFile, cancellationToken);
-    let transformedDiagnostics = transformManager.rewriteDiagnostics;
+    return transformManager.rewriteDiagnostics(diagnostics);
   };
 
   // TODO: how should *emit* work?

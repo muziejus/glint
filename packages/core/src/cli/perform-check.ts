@@ -2,6 +2,7 @@ import type ts from 'typescript';
 import TransformManager from '../common/transform-manager';
 import { GlintConfig } from '@glint/config';
 import { buildDiagnosticFormatter } from './diagnostics';
+import { loadTsconfig } from './utils/for-build';
 
 type TypeScript = typeof ts;
 
@@ -55,38 +56,4 @@ function createCompilerHost(
   host.readFile = transformManager.readTransformedFile;
   host.readDirectory = transformManager.readDirectory;
   return host;
-}
-
-function loadTsconfig(
-  ts: TypeScript,
-  transformManager: TransformManager,
-  configPath: string | undefined,
-  optionsToExtend: ts.CompilerOptions
-): ts.ParsedCommandLine {
-  if (!configPath) {
-    return {
-      fileNames: [],
-      options: optionsToExtend,
-      errors: [],
-    };
-  }
-
-  let config = ts.getParsedCommandLineOfConfigFile(configPath, optionsToExtend, {
-    ...ts.sys,
-    readDirectory: transformManager.readDirectory,
-    onUnRecoverableConfigFileDiagnostic(diagnostic) {
-      let { messageText } = diagnostic;
-      if (typeof messageText !== 'string') {
-        messageText = messageText.messageText;
-      }
-
-      throw new Error(messageText);
-    },
-  });
-
-  if (!config) {
-    throw new Error('Unknown error loading config');
-  }
-
-  return config;
 }
